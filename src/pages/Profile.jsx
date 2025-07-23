@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
@@ -32,6 +33,10 @@ const Dashboard = () => {
       <p><strong>Preferred Study Type:</strong> {userData.prefers || "Not set"}</p>
       <p><strong>Teaches:</strong> {userData.teaches.join(", ") || "None"}</p>
       <p><strong>Credit Points:</strong> {userData.creditPoints}</p>
+      <Link to="/update-profile"
+        className="inline-block mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Update Profile
+      </Link>
     </div>
   );
 };

@@ -3,6 +3,9 @@ import Signup from "./pages/Auth/Signup";
 import Login from "./pages/Auth/Login";
 import Dashboard from "./pages/Profile";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import UpdateProfile from "./pages/UpdateProfile";
+import Home from "./pages/Home";
+
 function App() {
   return (
     <Router>
@@ -17,6 +20,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/update-profile" element={<UpdateProfile />} />
+        <Route path="/" element={<Home />} />
       </Routes>
     </Router>
   );
