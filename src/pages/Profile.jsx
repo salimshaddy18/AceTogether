@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
+  const navigate = useNavigate();
 
   const fetchUserData = async () => {
     const user = auth.currentUser;
@@ -37,6 +38,12 @@ const Dashboard = () => {
         className="inline-block mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Update Profile
       </Link>
+      <button
+            onClick={() => auth.signOut().then(() => navigate("/login"))}
+            className="block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            🚪 Logout
+          </button>
     </div>
   );
 };

@@ -5,6 +5,7 @@ import Dashboard from "./pages/Profile";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import UpdateProfile from "./pages/UpdateProfile";
 import Home from "./pages/Home";
+import FindStudyPartner from "./pages/FindStudyPartner"
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         />
         <Route path="/update-profile" element={<UpdateProfile />} />
         <Route path="/" element={<Home />} />
+        <Route path="/find-study-partner" element={<FindStudyPartner />} />
       </Routes>
     </Router>
   );
