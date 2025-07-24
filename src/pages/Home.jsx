@@ -6,9 +6,10 @@ import { Link, useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [user, setUser] = useState(null);
-  const [matches, setMatches] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); 
   const navigate = useNavigate();
 
+  //fetch current logged-in user's data
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (userAuth) => {
       if (!userAuth) {
@@ -25,33 +26,22 @@ const Home = () => {
     return () => unsubscribe();
   }, []);
 
+  //fetch all other users (if needed)
   useEffect(() => {
-    const fetchMatches = async () => {
-      if (!user) return;
-      const usersRef = collection(db, "users");
-      const snapshot = await getDocs(usersRef);
-      const potentialMatches = [];
-
-      snapshot.forEach((docSnap) => {
-        const other = docSnap.data();
-        if (other.uid !== user.uid) {
-          const sharedSubjects = other.subjects?.filter((sub) =>
-            user.subjects?.includes(sub)
-          );
-          const matchPercent = Math.floor(
-            (sharedSubjects.length / (user.subjects?.length || 1)) * 100
-          );
-
-          if (sharedSubjects.length > 0) {
-            potentialMatches.push({ ...other, matchPercent });
-          }
+    const fetchUsers = async () => {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const userList = [];
+      querySnapshot.forEach((doc) => {
+        if (doc.id !== user?.uid) {
+          userList.push({ id: doc.id, ...doc.data() });
         }
       });
-
-      setMatches(potentialMatches.slice(0, 3));
+      setAllUsers(userList);
     };
 
-    fetchMatches();
+    if (user?.uid) {
+      fetchUsers();
+    }
   }, [user]);
 
   if (!user) return <div className="text-center mt-10">Loading...</div>;
@@ -105,7 +95,6 @@ const Home = () => {
           </Link>
         </div>
       </div>
-
     </div>
   );
 };
