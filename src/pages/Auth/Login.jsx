@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase/firebaseConfig";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -22,7 +22,7 @@ const Login = () => {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-4 border rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Login to PairUp</h2>
+      <h2 className="text-xl font-semibold mb-4">Login to AceTogether</h2>
       <form onSubmit={handleLogin} className="space-y-4">
         <input
           type="email"
@@ -42,9 +42,19 @@ const Login = () => {
           required
           className="w-full border p-2 rounded"
         />
-        <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white p-2 rounded"
+        >
           Login
         </button>
+
+        <p className="text-sm mt-4">
+          Dont have an account?{" "}
+          <Link to="/signup" className="text-blue-600 hover:underline">
+            Sign up
+          </Link>
+        </p>
       </form>
     </div>
   );

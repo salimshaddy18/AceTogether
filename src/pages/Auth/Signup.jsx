@@ -2,7 +2,7 @@ import { useState } from "react";
 import { auth, db } from "../../firebase/firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -77,9 +77,19 @@ const Signup = () => {
           required
           className="w-full border p-2 rounded"
         />
-        <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white p-2 rounded"
+        >
           Sign Up
         </button>
+
+        <p className="text-sm mt-4">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Login
+          </Link>
+        </p>
       </form>
     </div>
   );
