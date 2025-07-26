@@ -9,7 +9,12 @@ const FindStudyPartner = () => {
   const [availability, setAvailability] = useState("");
   const [users, setUsers] = useState([]);
 
-  const { user: currentUser } = useAuthContext(); // assuming you store logged-in user
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [allAvailability, setAllAvailability] = useState([]);
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]); 
+  const [availabilitySuggestions, setAvailabilitySuggestions] = useState([]); 
+
+  const { user: currentUser } = useAuthContext();
 
   const fetchUsers = async () => {
     try {
@@ -28,7 +33,7 @@ const FindStudyPartner = () => {
       const snapshot = await getDocs(q);
       const matchedUsers = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((user) => user.id !== currentUser?.uid); // Exclude self
+        .filter((user) => user.id !== currentUser?.uid);
 
       setUsers(matchedUsers);
     } catch (error) {
@@ -40,18 +45,81 @@ const FindStudyPartner = () => {
     fetchUsers();
   }, [subject, mode, availability]);
 
+  useEffect(() => {
+    const fetchUniqueFilters = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "users"));
+        const subjectsSet = new Set();
+        const availabilitySet = new Set();
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          (data.subjects || []).forEach((subj) => subjectsSet.add(subj.trim()));
+          if (data.availability) availabilitySet.add(data.availability.trim());
+        });
+
+        setAllSubjects([...subjectsSet]);
+        setAllAvailability([...availabilitySet]);
+      } catch (error) {
+        console.error("Error fetching filter options:", error);
+      }
+    };
+
+    fetchUniqueFilters();
+  }, []);
+
+  useEffect(() => {
+    if (subject) {
+      const filtered = allSubjects.filter((s) =>
+        s.toLowerCase().startsWith(subject.toLowerCase())
+      );
+      setSubjectSuggestions(filtered);
+    } else {
+      setSubjectSuggestions([]);
+    }
+  }, [subject, allSubjects]);
+
+  useEffect(() => {
+    if (availability) {
+      const filtered = allAvailability.filter((a) =>
+        a.toLowerCase().startsWith(availability.toLowerCase())
+      );
+      setAvailabilitySuggestions(filtered);
+    } else {
+      setAvailabilitySuggestions([]);
+    }
+  }, [availability, allAvailability]);
+
   return (
     <div className="max-w-4xl mx-auto p-4">
-      <h2 className="text-2xl font-semibold mb-4 text-center">🤝 Find Study Partners</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-center">
+        🤝 Find Study Partners
+      </h2>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Subject (e.g. DSA)"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
+        <div className="relative w-full">
+          <input
+            type="text"
+            placeholder="Subject (e.g. DSA)"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+          {subjectSuggestions.length > 0 && (
+            <ul className="absolute bg-white border w-full mt-1 z-10 rounded shadow">
+              {subjectSuggestions.map((s, idx) => (
+                <li
+                  key={idx}
+                  className="px-3 py-1 hover:bg-gray-200 cursor-pointer"
+                  onClick={() => setSubject(s)}
+                >
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <select
           value={mode}
           onChange={(e) => setMode(e.target.value)}
@@ -61,13 +129,29 @@ const FindStudyPartner = () => {
           <option value="one on one">One on One</option>
           <option value="group">Group</option>
         </select>
-        <input
-          type="text"
-          placeholder="Availability (e.g. Evenings)"
-          value={availability}
-          onChange={(e) => setAvailability(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
+
+        <div className="relative w-full">
+          <input
+            type="text"
+            placeholder="Availability (e.g. Evenings)"
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+          {availabilitySuggestions.length > 0 && (
+            <ul className="absolute bg-white border w-full mt-1 z-10 rounded shadow">
+              {availabilitySuggestions.map((a, idx) => (
+                <li
+                  key={idx}
+                  className="px-3 py-1 hover:bg-gray-200 cursor-pointer"
+                  onClick={() => setAvailability(a)}
+                >
+                  {a}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {users.length === 0 ? (
