@@ -3,16 +3,23 @@ import { db } from "../firebase/firebaseConfig";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useAuthContext } from "../context/AuthContext";
 
+const WEEKDAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
 const FindStudyPartner = () => {
   const [subject, setSubject] = useState("");
   const [mode, setMode] = useState("");
-  const [availability, setAvailability] = useState("");
+  const [selectedAvailability, setSelectedAvailability] = useState([]);
   const [users, setUsers] = useState([]);
-
   const [allSubjects, setAllSubjects] = useState([]);
-  const [allAvailability, setAllAvailability] = useState([]);
-  const [subjectSuggestions, setSubjectSuggestions] = useState([]); 
-  const [availabilitySuggestions, setAvailabilitySuggestions] = useState([]); 
+  const [subjectSuggestions, setSubjectSuggestions] = useState([]);
 
   const { user: currentUser } = useAuthContext();
 
@@ -22,9 +29,14 @@ const FindStudyPartner = () => {
       let q = usersRef;
 
       const filters = [];
+
       if (subject) filters.push(where("subjects", "array-contains", subject));
       if (mode) filters.push(where("prefers", "==", mode));
-      if (availability) filters.push(where("availability", "==", availability));
+      if (selectedAvailability.length === 1) {
+        filters.push(
+          where("availability", "array-contains", selectedAvailability[0])
+        );
+      }
 
       if (filters.length > 0) {
         q = query(usersRef, ...filters);
@@ -33,39 +45,45 @@ const FindStudyPartner = () => {
       const snapshot = await getDocs(q);
       const matchedUsers = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((user) => user.id !== currentUser?.uid);
+        .filter((user) => currentUser?.uid && user.id !== currentUser.uid);
 
-      setUsers(matchedUsers);
+      const finalUsers =
+        selectedAvailability.length > 1
+          ? matchedUsers.filter((user) =>
+              selectedAvailability.every((day) =>
+                user.availability?.includes(day)
+              )
+            )
+          : matchedUsers;
+
+      setUsers(finalUsers);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("🔥 Error fetching users:", error);
     }
   };
 
   useEffect(() => {
     fetchUsers();
-  }, [subject, mode, availability]);
+  }, [subject, mode, selectedAvailability]);
 
   useEffect(() => {
-    const fetchUniqueFilters = async () => {
+    const fetchUniqueSubjects = async () => {
       try {
         const snapshot = await getDocs(collection(db, "users"));
         const subjectsSet = new Set();
-        const availabilitySet = new Set();
 
         snapshot.forEach((doc) => {
           const data = doc.data();
           (data.subjects || []).forEach((subj) => subjectsSet.add(subj.trim()));
-          if (data.availability) availabilitySet.add(data.availability.trim());
         });
 
         setAllSubjects([...subjectsSet]);
-        setAllAvailability([...availabilitySet]);
       } catch (error) {
-        console.error("Error fetching filter options:", error);
+        console.error("🔥 Error fetching subjects:", error);
       }
     };
 
-    fetchUniqueFilters();
+    fetchUniqueSubjects();
   }, []);
 
   useEffect(() => {
@@ -79,16 +97,11 @@ const FindStudyPartner = () => {
     }
   }, [subject, allSubjects]);
 
-  useEffect(() => {
-    if (availability) {
-      const filtered = allAvailability.filter((a) =>
-        a.toLowerCase().startsWith(availability.toLowerCase())
-      );
-      setAvailabilitySuggestions(filtered);
-    } else {
-      setAvailabilitySuggestions([]);
-    }
-  }, [availability, allAvailability]);
+  const toggleAvailability = (day) => {
+    setSelectedAvailability((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -96,6 +109,7 @@ const FindStudyPartner = () => {
         🤝 Find Study Partners
       </h2>
 
+      {/* filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative w-full">
           <input
@@ -129,31 +143,29 @@ const FindStudyPartner = () => {
           <option value="one on one">One on One</option>
           <option value="group">Group</option>
         </select>
+      </div>
 
-        <div className="relative w-full">
-          <input
-            type="text"
-            placeholder="Availability (e.g. Evenings)"
-            value={availability}
-            onChange={(e) => setAvailability(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-          {availabilitySuggestions.length > 0 && (
-            <ul className="absolute bg-white border w-full mt-1 z-10 rounded shadow">
-              {availabilitySuggestions.map((a, idx) => (
-                <li
-                  key={idx}
-                  className="px-3 py-1 hover:bg-gray-200 cursor-pointer"
-                  onClick={() => setAvailability(a)}
-                >
-                  {a}
-                </li>
-              ))}
-            </ul>
-          )}
+      {/* availability */}
+      <div className="mb-6">
+        <label className="block font-semibold mb-2">Select Availability:</label>
+        <div className="flex flex-wrap gap-2">
+          {WEEKDAYS.map((day) => (
+            <button
+              key={day}
+              onClick={() => toggleAvailability(day)}
+              className={`px-3 py-1 border rounded-full ${
+                selectedAvailability.includes(day)
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              {day}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* res */}
       {users.length === 0 ? (
         <p className="text-center text-gray-500">No matching users found.</p>
       ) : (
@@ -162,7 +174,7 @@ const FindStudyPartner = () => {
             <div key={idx} className="border p-4 rounded shadow bg-white">
               <h3 className="text-lg font-bold">{user.fullName}</h3>
               <p>Subjects: {user.subjects?.join(", ")}</p>
-              <p>Availability: {user.availability}</p>
+              <p>Availability: {user.availability?.join(", ")}</p>
               <p>Prefers: {user.prefers}</p>
               <button className="mt-2 px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded">
                 Connect

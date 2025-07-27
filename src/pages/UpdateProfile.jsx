@@ -3,10 +3,12 @@ import { auth, db } from "../firebase/firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
+const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
 const UpdateProfile = () => {
   const [form, setForm] = useState({
     subjects: "",
-    availability: "",
+    availability: [],
     goals: "",
     prefers: "",
   });
@@ -22,7 +24,7 @@ const UpdateProfile = () => {
           const data = userDoc.data();
           setForm({
             subjects: data.subjects?.join(", ") || "",
-            availability: data.availability || "",
+            availability: Array.isArray(data.availability) ? data.availability : [],
             goals: data.goals || "",
             prefers: data.prefers || "",
           });
@@ -35,6 +37,13 @@ const UpdateProfile = () => {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleAvailabilityChange = (day) => {
+    const updated = form.availability.includes(day)
+      ? form.availability.filter((d) => d !== day)
+      : [...form.availability, day];
+    setForm({ ...form, availability: updated });
   };
 
   const handleSubmit = async (e) => {
@@ -75,15 +84,19 @@ const UpdateProfile = () => {
         </div>
 
         <div>
-          <label>Availability</label>
-          <input
-            type="text"
-            name="availability"
-            value={form.availability}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-            placeholder="e.g. Weekdays 6-9 PM"
-          />
+          <label>Availability (select weekdays)</label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {weekdays.map((day) => (
+              <label key={day} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={form.availability.includes(day)}
+                  onChange={() => handleAvailabilityChange(day)}
+                />
+                <span>{day}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div>
