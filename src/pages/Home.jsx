@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [user, setUser] = useState(null);
-  const [allUsers, setAllUsers] = useState([]); 
+  const [allUsers, setAllUsers] = useState([]);
   const navigate = useNavigate();
 
   //fetch current logged-in user's data
@@ -24,15 +24,15 @@ const Home = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
 
-  //fetch all other users (if needed)
+  // fetch all other users
   useEffect(() => {
     const fetchUsers = async () => {
       const querySnapshot = await getDocs(collection(db, "users"));
       const userList = [];
       querySnapshot.forEach((doc) => {
-        if (doc.id !== user?.uid) {
+        if (doc.id !== user.uid) {
           userList.push({ id: doc.id, ...doc.data() });
         }
       });
@@ -42,14 +42,16 @@ const Home = () => {
     if (user?.uid) {
       fetchUsers();
     }
-  }, [user]);
+  }, [user?.uid]);
 
   if (!user) return <div className="text-center mt-10">Loading...</div>;
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold">👋 Welcome, {user.fullName}</h1>
-      <p className="text-gray-600">Bio: {user.bio || "No bio yet"}</p>
+      <p className="text-gray-600">
+        Bio: {user.bio?.trim() ? user.bio : "No bio yet"}
+      </p>
 
       <button
         onClick={() => navigate("/Dashboard")}
@@ -57,6 +59,8 @@ const Home = () => {
       >
         User Profile
       </button>
+
+      <Link to="/requests">Connection Requests</Link>
 
       {/* Stats & Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -14,6 +14,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import UpdateProfile from "./pages/UpdateProfile";
 import Home from "./pages/Home";
 import FindStudyPartner from "./pages/FindStudyPartner";
+import ConnectionRequests from "./pages/ConnectionRequests";
 
 function App() {
   const [user, loading] = useAuthState(auth);
@@ -62,6 +63,15 @@ function App() {
         <Route
           path="/"
           element={<Navigate to={user ? "/home" : "/login"} replace />}
+        />
+
+        <Route
+          path="/requests"
+          element={
+            <ProtectedRoute>
+              <ConnectionRequests />
+            </ProtectedRoute>
+          }
         />
       </Routes>
     </Router>
