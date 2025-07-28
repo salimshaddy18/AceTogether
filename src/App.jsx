@@ -9,13 +9,13 @@ import { auth } from "./firebase/firebaseConfig";
 
 import Signup from "./pages/Auth/Signup";
 import Login from "./pages/Auth/Login";
-import Dashboard from "./pages/Profile";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import UpdateProfile from "./pages/UpdateProfile";
 import Home from "./pages/Home";
 import FindStudyPartner from "./pages/FindStudyPartner";
 import ConnectionRequests from "./pages/ConnectionRequests";
 import MyStudyBuddies from "./pages/MyStudyBuddies";
+import UserProfile from "./pages/UserProfile";
 
 function App() {
   const [user, loading] = useAuthState(auth);
@@ -32,7 +32,7 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <UserProfile />
             </ProtectedRoute>
           }
         />
@@ -65,6 +65,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MyStudyBuddies />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/:uid"
+          element={
+            <ProtectedRoute>
+              <UserProfile />
             </ProtectedRoute>
           }
         />

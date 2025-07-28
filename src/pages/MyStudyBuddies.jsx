@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase/firebaseConfig";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { Link } from "react-router-dom";
 
 const MyStudyBuddies = () => {
   const [buddies, setBuddies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [connections, setConnections] = useState([]);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -26,17 +26,6 @@ const MyStudyBuddies = () => {
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    const currentUser = auth.currentUser;
-    if (!currentUser?.uid) return;
-    const unsub = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
-      if (docSnap.exists()) {
-        setConnections(docSnap.data().connections || []);
-      }
-    });
-    return () => unsub();
-  }, [auth.currentUser?.uid]);
-
   if (loading) return <div className="p-4">Loading...</div>;
 
   return (
@@ -47,29 +36,32 @@ const MyStudyBuddies = () => {
       ) : (
         <div className="grid gap-4">
           {buddies.map((buddy) => (
-            <div
+            <Link
               key={buddy.uid}
-              className="flex items-center gap-4 p-4 border rounded shadow bg-white"
+              to={`/profile/${buddy.uid}`}
+              className="no-underline text-inherit"
             >
-              {/* Placeholder avatar: use initials or emoji */}
-              <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-xl font-bold overflow-hidden">
-                {buddy.avatarUrl ? (
-                  <img
-                    src={buddy.avatarUrl}
-                    alt="avatar"
-                    className="object-cover w-full h-full"
-                  />
-                ) : buddy.fullName ? (
-                  buddy.fullName[0].toUpperCase()
-                ) : (
-                  "👤"
-                )}
+              <div className="flex items-center gap-4 p-4 border rounded shadow bg-white hover:bg-blue-50 cursor-pointer">
+                {/* Placeholder avatar: use initials or emoji */}
+                <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-xl font-bold overflow-hidden">
+                  {buddy.avatarUrl ? (
+                    <img
+                      src={buddy.avatarUrl}
+                      alt="avatar"
+                      className="object-cover w-full h-full"
+                    />
+                  ) : buddy.fullName ? (
+                    buddy.fullName[0].toUpperCase()
+                  ) : (
+                    "👤"
+                  )}
+                </div>
+                <div>
+                  <div className="font-semibold text-lg">{buddy.fullName}</div>
+                  <div className="text-gray-500 text-sm">{buddy.email}</div>
+                </div>
               </div>
-              <div>
-                <div className="font-semibold text-lg">{buddy.fullName}</div>
-                <div className="text-gray-500 text-sm">{buddy.email}</div>
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

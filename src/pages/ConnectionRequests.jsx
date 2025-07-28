@@ -52,18 +52,18 @@ const ConnectionRequests = () => {
       const receiverSnap = await getDoc(receiverRef);
       const receiverData = receiverSnap.data();
 
+      // Remove the request from received (receiver) by userId and status
       const updatedReceived = (
         receiverData.connectionRequestsReceived || []
-      ).map((req) =>
-        req.userId === senderId ? { ...req, status: newStatus } : req
-      );
+      ).filter((req) => !(req.userId === senderId && req.status === "pending"));
 
       const senderRef = doc(db, "users", senderId);
       const senderSnap = await getDoc(senderRef);
       const senderData = senderSnap.data();
 
-      const updatedSent = (senderData.connectionRequestsSent || []).map((req) =>
-        req.userId === user.uid ? { ...req, status: newStatus } : req
+      // Remove the request from sent (sender) by userId and status
+      const updatedSent = (senderData.connectionRequestsSent || []).filter(
+        (req) => !(req.userId === user.uid && req.status === "pending")
       );
 
       const updateOps = [
@@ -103,50 +103,57 @@ const ConnectionRequests = () => {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-4">Connection Requests</h2>
-      {receivedRequests.length === 0 ? (
+      {receivedRequests.filter((req) => req.status === "pending").length ===
+      0 ? (
         <p>No connection requests.</p>
       ) : (
-        receivedRequests.map((req) => (
-          <div
-            key={req.userId}
-            className="border rounded p-4 mb-3 shadow-sm bg-white flex items-center gap-4"
-          >
-            <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center overflow-hidden">
-              {req.avatarUrl ? (
-                <img
-                  src={req.avatarUrl}
-                  alt="avatar"
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <span className="text-2xl">👤</span>
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="font-semibold">{req.name}</div>
-              {/* Optionally show email if available: {req.email && <div className="text-gray-500 text-sm">{req.email}</div>} */}
-              <div>
-                <strong>Status:</strong> {req.status}
+        receivedRequests
+          .filter((req) => req.status === "pending")
+          .map((req) => (
+            <div
+              key={req.userId}
+              className="border rounded p-4 mb-3 shadow-sm bg-white flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center overflow-hidden">
+                {req.avatarUrl ? (
+                  <img
+                    src={req.avatarUrl}
+                    alt="avatar"
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <span className="text-2xl">👤</span>
+                )}
               </div>
-              {req.status === "pending" && (
-                <div className="flex gap-2 mt-3">
-                  <button
-                    className="px-4 py-1 bg-green-500 text-white rounded"
-                    onClick={() => handleRequestResponse(req.userId, "accept")}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    className="px-4 py-1 bg-red-500 text-white rounded"
-                    onClick={() => handleRequestResponse(req.userId, "reject")}
-                  >
-                    Reject
-                  </button>
+              <div className="flex-1">
+                <div className="font-semibold">{req.name}</div>
+                {/* Optionally show email if available: {req.email && <div className="text-gray-500 text-sm">{req.email}</div>} */}
+                <div>
+                  <strong>Status:</strong> {req.status}
                 </div>
-              )}
+                {req.status === "pending" && (
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      className="px-4 py-1 bg-green-500 text-white rounded"
+                      onClick={() =>
+                        handleRequestResponse(req.userId, "accept")
+                      }
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="px-4 py-1 bg-red-500 text-white rounded"
+                      onClick={() =>
+                        handleRequestResponse(req.userId, "reject")
+                      }
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))
+          ))
       )}
     </div>
   );
