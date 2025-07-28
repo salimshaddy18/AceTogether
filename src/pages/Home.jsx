@@ -67,6 +67,12 @@ const Home = () => {
             🧑‍🤝‍🧑 My Study Buddies
           </Link>
           <Link
+            to="/chats"
+            className="block bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+          >
+            💬 My Chats
+          </Link>
+          <Link
             to="/learn"
             className="block bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
           >

@@ -16,6 +16,8 @@ import FindStudyPartner from "./pages/FindStudyPartner";
 import ConnectionRequests from "./pages/ConnectionRequests";
 import MyStudyBuddies from "./pages/MyStudyBuddies";
 import UserProfile from "./pages/UserProfile";
+import ChatList from "./pages/ChatList";
+import ChatRoom from "./pages/ChatRoom";
 
 function App() {
   const [user, loading] = useAuthState(auth);
@@ -73,6 +75,22 @@ function App() {
           element={
             <ProtectedRoute>
               <UserProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chats"
+          element={
+            <ProtectedRoute>
+              <ChatList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat/:chatId"
+          element={
+            <ProtectedRoute>
+              <ChatRoom />
             </ProtectedRoute>
           }
         />
