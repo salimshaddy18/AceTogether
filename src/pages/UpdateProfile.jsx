@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
-import { auth, db } from "../firebase/firebaseConfig";
+import { auth, db, storage } from "../firebase/firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 
-const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const weekdays = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 const UpdateProfile = () => {
   const [form, setForm] = useState({
@@ -14,6 +23,8 @@ const UpdateProfile = () => {
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,10 +35,13 @@ const UpdateProfile = () => {
           const data = userDoc.data();
           setForm({
             subjects: data.subjects?.join(", ") || "",
-            availability: Array.isArray(data.availability) ? data.availability : [],
+            availability: Array.isArray(data.availability)
+              ? data.availability
+              : [],
             goals: data.goals || "",
             prefers: data.prefers || "",
           });
+          setAvatarUrl(data.avatarUrl || "");
         }
       }
       setLoading(false);
@@ -46,17 +60,30 @@ const UpdateProfile = () => {
     setForm({ ...form, availability: updated });
   };
 
+  const handleAvatarChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setAvatarFile(e.target.files[0]);
+      setAvatarUrl(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const user = auth.currentUser;
     if (!user) return;
-
+    let uploadedAvatarUrl = avatarUrl;
     try {
+      if (avatarFile) {
+        const avatarRef = ref(storage, `avatars/${user.uid}`);
+        await uploadBytes(avatarRef, avatarFile);
+        uploadedAvatarUrl = await getDownloadURL(avatarRef);
+      }
       await updateDoc(doc(db, "users", user.uid), {
         subjects: form.subjects.split(",").map((s) => s.trim()),
         availability: form.availability,
         goals: form.goals,
         prefers: form.prefers,
+        avatarUrl: uploadedAvatarUrl,
       });
       alert("Profile updated!");
       navigate("/dashboard");
@@ -71,6 +98,21 @@ const UpdateProfile = () => {
     <div className="max-w-xl mx-auto mt-10 p-6 border rounded shadow">
       <h2 className="text-2xl font-bold mb-4">📝 Update Your Profile</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex flex-col items-center mb-4">
+          <label className="mb-2 font-semibold">Profile Picture</label>
+          <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-2">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="avatar"
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="text-4xl">👤</span>
+            )}
+          </div>
+          <input type="file" accept="image/*" onChange={handleAvatarChange} />
+        </div>
         <div>
           <label>Subjects (comma separated)</label>
           <input
@@ -124,7 +166,10 @@ const UpdateProfile = () => {
           </select>
         </div>
 
-        <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white p-2 rounded"
+        >
           Save Changes
         </button>
       </form>

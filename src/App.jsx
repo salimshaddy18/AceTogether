@@ -15,6 +15,7 @@ import UpdateProfile from "./pages/UpdateProfile";
 import Home from "./pages/Home";
 import FindStudyPartner from "./pages/FindStudyPartner";
 import ConnectionRequests from "./pages/ConnectionRequests";
+import MyStudyBuddies from "./pages/MyStudyBuddies";
 
 function App() {
   const [user, loading] = useAuthState(auth);
@@ -56,6 +57,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/buddies"
+          element={
+            <ProtectedRoute>
+              <MyStudyBuddies />
             </ProtectedRoute>
           }
         />

@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 
 const Home = () => {
   const [user, setUser] = useState(null);
-  const [allUsers, setAllUsers] = useState([]);
   const navigate = useNavigate();
 
   //fetch current logged-in user's data
@@ -25,24 +24,6 @@ const Home = () => {
 
     return () => unsubscribe();
   }, [navigate]);
-
-  // fetch all other users
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const userList = [];
-      querySnapshot.forEach((doc) => {
-        if (doc.id !== user.uid) {
-          userList.push({ id: doc.id, ...doc.data() });
-        }
-      });
-      setAllUsers(userList);
-    };
-
-    if (user?.uid) {
-      fetchUsers();
-    }
-  }, [user?.uid]);
 
   if (!user) return <div className="text-center mt-10">Loading...</div>;
 
@@ -78,6 +59,12 @@ const Home = () => {
             className="block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
           >
             🤝 Find Partner
+          </Link>
+          <Link
+            to="/buddies"
+            className="block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            🧑‍🤝‍🧑 My Study Buddies
           </Link>
           <Link
             to="/learn"

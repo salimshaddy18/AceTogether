@@ -12,6 +12,7 @@ import {
   orderBy,
   limit,
   startAfter,
+  onSnapshot,
 } from "firebase/firestore";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { useAuthContext } from "../context/AuthContext";
@@ -38,20 +39,31 @@ const FindStudyPartner = () => {
   const [sentRequests, setSentRequests] = useState([]);
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [connections, setConnections] = useState([]);
 
   const { user: currentUser } = useAuthContext();
 
   useEffect(() => {
-    const fetchSentRequests = async () => {
-      if (currentUser?.uid) {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          setSentRequests(userDoc.data().connectionRequestsSent || []);
-        }
+    if (!currentUser?.uid) return;
+    const unsub = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setSentRequests(
+          (docSnap.data().connectionRequestsSent || []).map((r) => r.userId)
+        );
       }
-    };
-    fetchSentRequests();
-  }, [currentUser]);
+    });
+    return () => unsub();
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    const unsub = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setConnections(docSnap.data().connections || []);
+      }
+    });
+    return () => unsub();
+  }, [currentUser?.uid]);
 
   const buildQuery = () => {
     const usersRef = collection(db, "users");
@@ -176,24 +188,37 @@ const FindStudyPartner = () => {
 
   const handleConnect = async (receiverId) => {
     if (!currentUser?.uid || !receiverId) return;
-
+    // Prevent duplicate requests or already-connected users
+    const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+    const receiverDoc = await getDoc(doc(db, "users", receiverId));
+    if (!userDoc.exists() || !receiverDoc.exists()) return;
+    const sent = userDoc.data().connectionRequestsSent || [];
+    const connections = userDoc.data().connections || [];
+    if (
+      sent.some((r) => r.userId === receiverId) ||
+      connections.includes(receiverId)
+    )
+      return;
+    // Store only the other party's info in each array
+    const senderInfo = {
+      userId: currentUser.uid,
+      name: userDoc.data().fullName,
+      avatarUrl: userDoc.data().avatarUrl || "",
+      status: "pending",
+    };
+    const receiverInfo = {
+      userId: receiverDoc.id,
+      name: receiverDoc.data().fullName,
+      avatarUrl: receiverDoc.data().avatarUrl || "",
+      status: "pending",
+    };
     try {
-      //sender side
       await updateDoc(doc(db, "users", currentUser.uid), {
-        connectionRequestsSent: arrayUnion({
-          userId: receiverId,
-          status: "pending",
-        }),
+        connectionRequestsSent: arrayUnion(receiverInfo), // Only receiver info
       });
-
-      //receiver side
       await updateDoc(doc(db, "users", receiverId), {
-        connectionRequestsReceived: arrayUnion({
-          userId: currentUser.uid,
-          status: "pending",
-        }),
+        connectionRequestsReceived: arrayUnion(senderInfo), // Only sender info
       });
-
       setSentRequests((prev) => [...prev, receiverId]);
     } catch (error) {
       console.error("Failed to send request:", error);
@@ -295,15 +320,24 @@ const FindStudyPartner = () => {
                 </p>
                 <p>Prefers: {user.prefers || "—"}</p>
                 <button
-                  disabled={sentRequests.includes(user.id)}
+                  disabled={
+                    sentRequests.includes(user.id) ||
+                    connections.includes(user.id)
+                  }
                   onClick={() => handleConnect(user.id)}
                   className={`mt-2 px-4 py-1 rounded ${
-                    sentRequests.includes(user.id)
+                    connections.includes(user.id)
+                      ? "bg-green-500 cursor-not-allowed"
+                      : sentRequests.includes(user.id)
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-blue-600 hover:bg-blue-700 text-white"
                   }`}
                 >
-                  {sentRequests.includes(user.id) ? "Requested" : "Connect"}
+                  {connections.includes(user.id)
+                    ? "Connected"
+                    : sentRequests.includes(user.id)
+                    ? "Requested"
+                    : "Connect"}
                 </button>
               </div>
             ))}
