@@ -34,6 +34,7 @@ const ConnectionRequests = () => {
               avatarUrl: senderDoc.exists()
                 ? senderDoc.data().avatarUrl || ""
                 : "",
+              isNew: req.isNew !== false, // Mark as new if not explicitly marked as read
             };
           })
         );
@@ -43,6 +44,26 @@ const ConnectionRequests = () => {
     });
     return () => unsub();
   }, [user]);
+
+  // Mark requests as read when page is viewed
+  useEffect(() => {
+    if (receivedRequests.length > 0 && user) {
+      const markAsRead = async () => {
+        const updatedRequests = receivedRequests.map((req) => ({
+          ...req,
+          isNew: false,
+        }));
+        try {
+          await updateDoc(doc(db, "users", user.uid), {
+            connectionRequestsReceived: updatedRequests,
+          });
+        } catch (error) {
+          console.error("Error marking requests as read:", error);
+        }
+      };
+      markAsRead();
+    }
+  }, [receivedRequests, user]);
 
   const handleRequestResponse = async (senderId, action) => {
     const newStatus = action === "accept" ? "accepted" : "rejected";
@@ -112,7 +133,9 @@ const ConnectionRequests = () => {
           .map((req) => (
             <div
               key={req.userId}
-              className="border rounded p-4 mb-3 shadow-sm bg-white flex items-center gap-4"
+              className={`border rounded p-4 mb-3 shadow-sm bg-white flex items-center gap-4 ${
+                req.isNew ? "border-l-4 border-l-blue-500" : ""
+              }`}
             >
               <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center overflow-hidden">
                 {req.avatarUrl ? (
@@ -126,7 +149,14 @@ const ConnectionRequests = () => {
                 )}
               </div>
               <div className="flex-1">
-                <div className="font-semibold">{req.name}</div>
+                <div className="flex items-center gap-2">
+                  <div className="font-semibold">{req.name}</div>
+                  {req.isNew && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                      New
+                    </span>
+                  )}
+                </div>
                 {/* Optionally show email if available: {req.email && <div className="text-gray-500 text-sm">{req.email}</div>} */}
                 <div>
                   <strong>Status:</strong> {req.status}

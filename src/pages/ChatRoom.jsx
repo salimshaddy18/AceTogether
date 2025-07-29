@@ -31,11 +31,9 @@ const ChatRoom = () => {
   useEffect(() => {
     const user = auth.currentUser;
     if (!user || !chatId) return;
-
     //parse chatId to get the other user's UID
     const [uid1, uid2] = chatId.split("_");
     const otherUid = user.uid === uid1 ? uid2 : uid1;
-
     //get other user's profile
     const fetchOtherUser = async () => {
       const otherUserDoc = await getDoc(doc(db, "users", otherUid));
@@ -44,7 +42,6 @@ const ChatRoom = () => {
       }
     };
     fetchOtherUser();
-
     //listen
     const unsub = onSnapshot(doc(db, "chats", chatId), (docSnap) => {
       if (docSnap.exists()) {
@@ -65,6 +62,16 @@ const ChatRoom = () => {
     return () => unsub();
   }, [chatId]);
 
+  //update lastSeenChats
+  useEffect(() => {
+    if (auth.currentUser && chatId) {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      updateDoc(userRef, {
+        [`lastSeenChats.${chatId}`]: serverTimestamp(),
+      });
+    }
+  }, [chatId]);
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !auth.currentUser) return;
@@ -80,7 +87,7 @@ const ChatRoom = () => {
       await updateDoc(doc(db, "chats", chatId), {
         messages: arrayUnion(messageData),
         lastMessage: newMessage.trim(),
-        lastMessageTime: serverTimestamp(), // This is fine for the chat document
+        lastMessageTime: serverTimestamp(),
       });
       setNewMessage("");
     } catch (error) {
