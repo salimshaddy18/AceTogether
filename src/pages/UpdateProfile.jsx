@@ -20,7 +20,7 @@ const UpdateProfile = () => {
     availability: [],
     goals: "",
     prefers: "",
-    bio: "", 
+    bio: "",
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ const UpdateProfile = () => {
               : [],
             goals: data.goals || "",
             prefers: data.prefers || "",
-            bio: data.bio || "", 
+            bio: data.bio || "",
           });
           setAvatarUrl(data.avatarUrl || "");
         }
@@ -80,12 +80,13 @@ const UpdateProfile = () => {
         await uploadBytes(avatarRef, avatarFile);
         uploadedAvatarUrl = await getDownloadURL(avatarRef);
       }
+
       await updateDoc(doc(db, "users", user.uid), {
         subjects: form.subjects.split(",").map((s) => s.trim()),
         availability: form.availability,
         goals: form.goals,
         prefers: form.prefers,
-        bio: form.bio, 
+        bio: form.bio,
         avatarUrl: uploadedAvatarUrl,
       });
       alert("Profile updated!");

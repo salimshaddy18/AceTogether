@@ -37,6 +37,9 @@ const Signup = () => {
         goals: "",
         prefers: "",
         creditPoints: 50,
+        connections: [], 
+        connectionRequestsSent: [], 
+        connectionRequestsReceived: [], 
         createdAt: new Date(),
       });
 

@@ -7,6 +7,12 @@ import {
   onSnapshot,
   doc as firestoreDoc,
   getDoc as firestoreGetDoc,
+  addDoc, 
+  collection, 
+  serverTimestamp, 
+  query, 
+  where, 
+  getDocs, 
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 
@@ -110,6 +116,38 @@ const ConnectionRequests = () => {
           }),
           updateDoc(senderRef, { connections: Array.from(senderConnections) })
         );
+
+        // Create a document in the 'connections' collection only if one does not already exist
+        const usersArr = [user.uid, senderId].sort();
+        try {
+          const connRef = collection(db, "connections");
+          const q = query(
+            connRef,
+            where("users", "==", usersArr),
+            where("status", "==", "accepted")
+          );
+          const connSnap = await getDocs(q);
+          if (connSnap.empty) {
+            const connDoc = {
+              users: usersArr,
+              status: "accepted",
+              createdAt: serverTimestamp(),
+              userInfo: {
+                [user.uid]: {
+                  name: receiverData.fullName || "",
+                  avatarUrl: receiverData.avatarUrl || "",
+                },
+                [senderId]: {
+                  name: senderData.fullName || "",
+                  avatarUrl: senderData.avatarUrl || "",
+                },
+              },
+            };
+            await addDoc(connRef, connDoc);
+          }
+        } catch (e) {
+          console.error("Failed to create connection document:", e);
+        }
       }
 
       await Promise.all(updateOps);

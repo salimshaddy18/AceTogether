@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase/firebaseConfig";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { Link } from "react-router-dom";
 
 const UserProfile = () => {
@@ -29,6 +36,7 @@ const UserProfile = () => {
         if (isOwnProfile) {
           setCanSeeBio(true);
         } else {
+          // First, try to check the connections collection
           const usersArr = [currentUser.uid, targetUid].sort();
           const connRef = collection(db, "connections");
           const q = query(
@@ -37,7 +45,33 @@ const UserProfile = () => {
             where("status", "==", "accepted")
           );
           const connSnap = await getDocs(q);
-          setCanSeeBio(!connSnap.empty);
+
+          if (!connSnap.empty) {
+            // Connection found in connections collection
+            setCanSeeBio(true);
+          } else {
+            // Fallback: check if users are in each other's connections arrays
+            const currentUserDoc = await getDoc(
+              doc(db, "users", currentUser.uid)
+            );
+            const targetUserDoc = await getDoc(doc(db, "users", targetUid));
+
+            if (currentUserDoc.exists() && targetUserDoc.exists()) {
+              const currentUserConnections =
+                currentUserDoc.data().connections || [];
+              const targetUserConnections =
+                targetUserDoc.data().connections || [];
+
+              // Check if they are in each other's connections arrays
+              const areConnected =
+                currentUserConnections.includes(targetUid) &&
+                targetUserConnections.includes(currentUser.uid);
+
+              setCanSeeBio(areConnected);
+            } else {
+              setCanSeeBio(false);
+            }
+          }
         }
       }
 
