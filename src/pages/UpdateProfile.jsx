@@ -20,6 +20,7 @@ const UpdateProfile = () => {
     availability: [],
     goals: "",
     prefers: "",
+    bio: "", 
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const UpdateProfile = () => {
               : [],
             goals: data.goals || "",
             prefers: data.prefers || "",
+            bio: data.bio || "", 
           });
           setAvatarUrl(data.avatarUrl || "");
         }
@@ -83,6 +85,7 @@ const UpdateProfile = () => {
         availability: form.availability,
         goals: form.goals,
         prefers: form.prefers,
+        bio: form.bio, 
         avatarUrl: uploadedAvatarUrl,
       });
       alert("Profile updated!");
@@ -113,6 +116,7 @@ const UpdateProfile = () => {
           </div>
           <input type="file" accept="image/*" onChange={handleAvatarChange} />
         </div>
+
         <div>
           <label>Subjects (comma separated)</label>
           <input
@@ -164,6 +168,18 @@ const UpdateProfile = () => {
             <option value="one on one">one on one</option>
             <option value="Group">group</option>
           </select>
+        </div>
+
+        <div>
+          <label>Bio</label>
+          <textarea
+            name="bio"
+            value={form.bio}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+            rows={3}
+            placeholder="Tell others about yourself..."
+          />
         </div>
 
         <button

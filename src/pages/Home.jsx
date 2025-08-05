@@ -118,7 +118,7 @@ const Home = () => {
         <div className="bg-white p-4 rounded shadow space-y-2">
           <h2 className="text-xl font-semibold">📊 Your Stats</h2>
           <p>💰 Credits: {user?.creditPoints || 0}</p>
-          <p>⏱️ Study Time: {user?.studyTime || "0h this week"}</p>
+          <p>⏱️ Study Time: {user?.studyTime || "0 hrs"}</p>
           <p>🤝 Connections: {user?.connections?.length || 0}</p>
         </div>
 
@@ -149,24 +149,6 @@ const Home = () => {
               )}
             </Link>
           </div>
-          <Link
-            to="/learn"
-            className="block bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-          >
-            🎓 Learn Session
-          </Link>
-          <Link
-            to="/teach"
-            className="block bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-          >
-            🎓 Teach Session
-          </Link>
-          <Link
-            to="/leaderboard"
-            className="block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-          >
-            🏆 View Leaderboard
-          </Link>
         </div>
       </div>
     </div>

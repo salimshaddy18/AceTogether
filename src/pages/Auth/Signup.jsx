@@ -31,11 +31,11 @@ const Signup = () => {
         uid: userCredentail.user.uid,
         fullName: formData.fullName,
         email: formData.email,
+        bio: "",
         subjects: [],
-        availability: "",
+        availability: [],
         goals: "",
         prefers: "",
-        teaches: [],
         creditPoints: 50,
         createdAt: new Date(),
       });

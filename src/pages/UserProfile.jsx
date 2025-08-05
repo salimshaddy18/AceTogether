@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { Link } from "react-router-dom";
 
 const UserProfile = () => {
@@ -9,18 +9,38 @@ const UserProfile = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [canSeeBio, setCanSeeBio] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
-      const targetUid = uid || auth.currentUser?.uid;
-      if (!targetUid) return;
+      const currentUser = auth.currentUser;
+      const targetUid = uid || currentUser?.uid;
+      if (!targetUid || !currentUser) return;
 
       const userDoc = await getDoc(doc(db, "users", targetUid));
       if (userDoc.exists()) {
-        setUserData(userDoc.data());
-        setIsCurrentUser(!uid || uid === auth.currentUser?.uid);
+        const data = userDoc.data();
+        setUserData(data);
+
+        const isOwnProfile = targetUid === currentUser.uid;
+        setIsCurrentUser(isOwnProfile);
+
+        if (isOwnProfile) {
+          setCanSeeBio(true);
+        } else {
+          const usersArr = [currentUser.uid, targetUid].sort();
+          const connRef = collection(db, "connections");
+          const q = query(
+            connRef,
+            where("users", "==", usersArr),
+            where("status", "==", "accepted")
+          );
+          const connSnap = await getDocs(q);
+          setCanSeeBio(!connSnap.empty);
+        }
       }
+
       setLoading(false);
     };
     fetchUser();
@@ -44,6 +64,7 @@ const UserProfile = () => {
           )}
         </div>
       </div>
+
       <h2 className="text-2xl font-bold">
         👤 {isCurrentUser ? "Your Profile" : userData.fullName}
       </h2>
@@ -57,7 +78,10 @@ const UserProfile = () => {
         <strong>Subjects:</strong> {userData.subjects?.join(", ") || "Not set"}
       </p>
       <p>
-        <strong>Availability:</strong> {userData.availability || "Not set"}
+        <strong>Availability:</strong>{" "}
+        {Array.isArray(userData.availability)
+          ? userData.availability.join(", ")
+          : "Not set"}
       </p>
       <p>
         <strong>Goals:</strong> {userData.goals || "Not set"}
@@ -66,12 +90,10 @@ const UserProfile = () => {
         <strong>Preferred Study Type:</strong> {userData.prefers || "Not set"}
       </p>
       <p>
-        <strong>Teaches:</strong> {userData.teaches?.join(", ") || "None"}
-      </p>
-      <p>
         <strong>Credit Points:</strong> {userData.creditPoints}
       </p>
-      {userData.bio && (
+
+      {canSeeBio && userData.bio && (
         <p>
           <strong>Bio:</strong> {userData.bio}
         </p>
