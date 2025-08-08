@@ -18,6 +18,8 @@ import MyStudyBuddies from "./pages/MyStudyBuddies";
 import UserProfile from "./pages/UserProfile";
 import ChatList from "./pages/ChatList";
 import ChatRoom from "./pages/ChatRoom";
+import JoinMeetings from "./pages/JoinMeeting";
+import VideoConferenceRooms from "./pages/VideoConferenceRoom"
 
 function App() {
   const [user, loading] = useAuthState(auth);
@@ -28,6 +30,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/signup" element={<Signup />} />
+
         <Route path="/login" element={<Login />} />
 
         <Route
@@ -38,6 +41,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/update-profile"
           element={
@@ -46,6 +50,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/find-study-partner"
           element={
@@ -54,6 +59,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/home"
           element={
@@ -62,6 +68,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/buddies"
           element={
@@ -70,6 +77,25 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/joinmeetings"
+          element={
+            <ProtectedRoute>
+              <JoinMeetings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/room/:roomId"
+          element={
+            <ProtectedRoute>
+              <VideoConferenceRooms />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/profile/:uid"
           element={
@@ -78,6 +104,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/chats"
           element={
@@ -86,6 +113,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/chat/:chatId"
           element={

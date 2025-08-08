@@ -91,9 +91,6 @@ const Home = () => {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold">👋 Welcome, {user?.fullName}</h1>
-      <p className="text-gray-600">
-        Bio: {user?.bio?.trim() ? user.bio : "No bio yet"}
-      </p>
 
       <button
         onClick={() => navigate("/Dashboard")}
@@ -124,18 +121,28 @@ const Home = () => {
 
         <div className="bg-white p-4 rounded shadow space-y-4">
           <h2 className="text-xl font-semibold">💡 Quick Actions</h2>
+          
           <Link
             to="/find-study-partner"
             className="block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
           >
             🤝 Find Partner
           </Link>
+
           <Link
             to="/buddies"
             className="block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             🧑‍🤝‍🧑 My Study Buddies
           </Link>
+
+          <Link
+            to="/joinmeetings"
+            className="block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Join meeting
+          </Link>
+
           <div className="relative">
             <Link
               to="/chats"
