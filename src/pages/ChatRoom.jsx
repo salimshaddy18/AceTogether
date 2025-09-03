@@ -6,9 +6,13 @@ import {
   getDoc,
   onSnapshot,
   updateDoc,
-  arrayUnion,
   serverTimestamp,
   setDoc,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot as onCollectionSnapshot,
 } from "firebase/firestore";
 
 const ChatRoom = () => {
@@ -31,10 +35,12 @@ const ChatRoom = () => {
   useEffect(() => {
     const user = auth.currentUser;
     if (!user || !chatId) return;
-    //parse chatId to get the other user's UID
+
+    // parse chatId to get the other user's UID
     const [uid1, uid2] = chatId.split("_");
     const otherUid = user.uid === uid1 ? uid2 : uid1;
-    //get other user's profile
+
+    // get other user's profile
     const fetchOtherUser = async () => {
       const otherUserDoc = await getDoc(doc(db, "users", otherUid));
       if (otherUserDoc.exists()) {
@@ -42,58 +48,72 @@ const ChatRoom = () => {
       }
     };
     fetchOtherUser();
-    //listen
-    const unsub = onSnapshot(doc(db, "chats", chatId), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setMessages(data.messages || []);
-      } else {
-        //create new chat document if it doesn't exist
+
+    // check if chat doc exists
+    const unsubChat = onSnapshot(doc(db, "chats", chatId), (docSnap) => {
+      if (!docSnap.exists()) {
         setDoc(doc(db, "chats", chatId), {
           participants: [uid1, uid2],
-          messages: [],
           lastMessage: "",
           lastMessageTime: null,
         });
       }
+    });
+
+    // listen to messages subcollection
+    const messagesRef = collection(db, "chats", chatId, "messages");
+    const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+    const unsubMessages = onCollectionSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setMessages(msgs);
       setLoading(false);
     });
 
-    return () => unsub();
+    return () => {
+      unsubChat();
+      unsubMessages();
+    };
   }, [chatId]);
 
-  //update lastSeenChats
+  // update lastSeenChats 
   useEffect(() => {
-    if (auth.currentUser && chatId) {
+    if (auth.currentUser && chatId && messages.length > 0) {
       const userRef = doc(db, "users", auth.currentUser.uid);
       updateDoc(userRef, {
         [`lastSeenChats.${chatId}`]: serverTimestamp(),
       });
     }
-  }, [chatId]);
+  }, [chatId, messages.length]);
 
   const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !auth.currentUser) return;
+  e.preventDefault();
+  if (!newMessage.trim() || !auth.currentUser) return;
 
-    const messageData = {
-      id: Date.now().toString(),
+  try {
+    // add new message to subcollection
+    await addDoc(collection(db, "chats", chatId, "messages"), {
       senderId: auth.currentUser.uid,
       text: newMessage.trim(),
-      timestamp: new Date(),
-    };
+      timestamp: serverTimestamp(),
+    });
 
-    try {
-      await updateDoc(doc(db, "chats", chatId), {
-        messages: arrayUnion(messageData),
-        lastMessage: newMessage.trim(),
-        lastMessageTime: serverTimestamp(),
-      });
-      setNewMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-  };
+    // update parent chat doc with last message + sender
+    await updateDoc(doc(db, "chats", chatId), {
+      lastMessage: newMessage.trim(),
+      lastMessageTime: serverTimestamp(),
+      lastMessageSenderId: auth.currentUser.uid,
+    });
+
+    setNewMessage("");
+  } catch (error) {
+    console.error("Error sending message:", error);
+  }
+};
+
 
   if (loading) return <div className="p-4">Loading chat...</div>;
   if (!otherUser) return <div className="p-4">User not found.</div>;
@@ -123,7 +143,6 @@ const ChatRoom = () => {
         </div>
         <div>
           <div className="font-semibold">{otherUser.fullName}</div>
-          <div className="text-sm text-gray-500">Online</div>
         </div>
       </div>
 
@@ -159,7 +178,9 @@ const ChatRoom = () => {
                         : "text-gray-500"
                     }`}
                   >
-                    {new Date(message.timestamp.toDate()).toLocaleTimeString()}
+                    {message.timestamp.toDate
+                      ? new Date(message.timestamp.toDate()).toLocaleTimeString()
+                      : ""}
                   </div>
                 )}
               </div>
@@ -169,7 +190,7 @@ const ChatRoom = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* taking message input */}
+      {/* input box */}
       <form onSubmit={sendMessage} className="bg-white border-t p-4">
         <div className="flex gap-2">
           <input

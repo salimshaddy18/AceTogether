@@ -1,22 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { auth, db } from "../firebase/firebaseConfig";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { Link } from "react-router-dom";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const UserProfile = () => {
   const { uid } = useParams();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isCurrentUser, setIsCurrentUser] = useState(false);
-  const [canSeeBio, setCanSeeBio] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,56 +20,36 @@ const UserProfile = () => {
       if (userDoc.exists()) {
         const data = userDoc.data();
         setUserData(data);
-
-        const isOwnProfile = targetUid === currentUser.uid;
-        setIsCurrentUser(isOwnProfile);
-
-        if (isOwnProfile) {
-          setCanSeeBio(true);
-        } else {
-          // First, try to check the connections collection
-          const usersArr = [currentUser.uid, targetUid].sort();
-          const connRef = collection(db, "connections");
-          const q = query(
-            connRef,
-            where("users", "==", usersArr),
-            where("status", "==", "accepted")
-          );
-          const connSnap = await getDocs(q);
-
-          if (!connSnap.empty) {
-            // Connection found in connections collection
-            setCanSeeBio(true);
-          } else {
-            // Fallback: check if users are in each other's connections arrays
-            const currentUserDoc = await getDoc(
-              doc(db, "users", currentUser.uid)
-            );
-            const targetUserDoc = await getDoc(doc(db, "users", targetUid));
-
-            if (currentUserDoc.exists() && targetUserDoc.exists()) {
-              const currentUserConnections =
-                currentUserDoc.data().connections || [];
-              const targetUserConnections =
-                targetUserDoc.data().connections || [];
-
-              // Check if they are in each other's connections arrays
-              const areConnected =
-                currentUserConnections.includes(targetUid) &&
-                targetUserConnections.includes(currentUser.uid);
-
-              setCanSeeBio(areConnected);
-            } else {
-              setCanSeeBio(false);
-            }
-          }
-        }
+        setIsCurrentUser(targetUid === currentUser.uid);
       }
 
       setLoading(false);
     };
     fetchUser();
   }, [uid]);
+
+  // Chat button click
+  const handleChat = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !uid) return;
+
+    const usersArr = [currentUser.uid, uid].sort();
+    const chatId = `${usersArr[0]}_${usersArr[1]}`;
+
+    const chatRef = doc(db, "chats", chatId);
+    const chatSnap = await getDoc(chatRef);
+
+    if (!chatSnap.exists()) {
+      await setDoc(chatRef, {
+        participants: usersArr,
+        messages: [],
+        lastMessage: "",
+        lastMessageTime: null,
+      });
+    }
+
+    navigate(`/chat/${chatId}`);
+  };
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (!userData) return <div className="p-4">User not found.</div>;
@@ -102,6 +73,7 @@ const UserProfile = () => {
       <h2 className="text-2xl font-bold">
         👤 {isCurrentUser ? "Your Profile" : userData.fullName}
       </h2>
+
       <p>
         <strong>Full Name:</strong> {userData.fullName}
       </p>
@@ -124,31 +96,35 @@ const UserProfile = () => {
         <strong>Preferred Study Type:</strong> {userData.prefers || "Not set"}
       </p>
       <p>
-        <strong>Credit Points:</strong> {userData.creditPoints}
+        <strong>Bio:</strong> {userData.bio || "Not set"}
       </p>
 
-      {canSeeBio && userData.bio && (
-        <p>
-          <strong>Bio:</strong> {userData.bio}
-        </p>
-      )}
-
-      {isCurrentUser && (
-        <div className="flex gap-2 mt-4">
-          <Link
-            to="/update-profile"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Update Profile
-          </Link>
+      {/* Action buttons */}
+      <div className="flex gap-2 mt-4 flex-wrap">
+        {isCurrentUser ? (
+          <>
+            <Link
+              to="/update-profile"
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Update Profile
+            </Link>
+            <button
+              onClick={() => auth.signOut().then(() => navigate("/login"))}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              🚪 Logout
+            </button>
+          </>
+        ) : (
           <button
-            onClick={() => auth.signOut().then(() => navigate("/login"))}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            onClick={handleChat}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            🚪 Logout
+            💬 Chat
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

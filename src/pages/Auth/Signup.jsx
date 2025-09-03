@@ -36,7 +36,6 @@ const Signup = () => {
         availability: [],
         goals: "",
         prefers: "",
-        creditPoints: 50,
         connections: [], 
         connectionRequestsSent: [], 
         connectionRequestsReceived: [], 

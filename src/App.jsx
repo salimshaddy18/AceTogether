@@ -18,8 +18,7 @@ import MyStudyBuddies from "./pages/MyStudyBuddies";
 import UserProfile from "./pages/UserProfile";
 import ChatList from "./pages/ChatList";
 import ChatRoom from "./pages/ChatRoom";
-import JoinMeetings from "./pages/JoinMeeting";
-import VideoConferenceRooms from "./pages/VideoConferenceRoom"
+import VideoConferenceRooms from "./pages/VideoConferenceRoom";
 
 function App() {
   const [user, loading] = useAuthState(auth);
@@ -34,7 +33,7 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route
-          path="/dashboard"
+          path="/userprofile"
           element={
             <ProtectedRoute>
               <UserProfile />
@@ -79,16 +78,7 @@ function App() {
         />
 
         <Route
-          path="/joinmeetings"
-          element={
-            <ProtectedRoute>
-              <JoinMeetings />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/room/:roomId"
+          path="/room"
           element={
             <ProtectedRoute>
               <VideoConferenceRooms />

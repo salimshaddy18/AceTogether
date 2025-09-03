@@ -24,8 +24,8 @@ const UpdateProfile = () => {
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState(""); 
+  const [avatarFile, setAvatarFile] = useState(null); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,7 +65,6 @@ const UpdateProfile = () => {
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setAvatarFile(e.target.files[0]);
-      setAvatarUrl(URL.createObjectURL(e.target.files[0]));
     }
   };
 
@@ -73,22 +72,31 @@ const UpdateProfile = () => {
     e.preventDefault();
     const user = auth.currentUser;
     if (!user) return;
-    let uploadedAvatarUrl = avatarUrl;
+
+    let uploadedAvatarUrl = avatarUrl; 
+
     try {
       if (avatarFile) {
-        const avatarRef = ref(storage, `avatars/${user.uid}`);
-        await uploadBytes(avatarRef, avatarFile);
+        const ext = avatarFile.name.split(".").pop(); 
+        const avatarRef = ref(storage, `avatars/${user.uid}.${ext}`);
+        await uploadBytes(avatarRef, avatarFile, {
+          contentType: avatarFile.type,
+        });
         uploadedAvatarUrl = await getDownloadURL(avatarRef);
       }
 
       await updateDoc(doc(db, "users", user.uid), {
-        subjects: form.subjects.split(",").map((s) => s.trim()),
+        subjects: form.subjects
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0),
         availability: form.availability,
         goals: form.goals,
         prefers: form.prefers,
         bio: form.bio,
         avatarUrl: uploadedAvatarUrl,
       });
+
       alert("Profile updated!");
       navigate("/dashboard");
     } catch (error) {
@@ -102,10 +110,17 @@ const UpdateProfile = () => {
     <div className="max-w-xl mx-auto mt-10 p-6 border rounded shadow">
       <h2 className="text-2xl font-bold mb-4">📝 Update Your Profile</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* avatar Upload */}
         <div className="flex flex-col items-center mb-4">
           <label className="mb-2 font-semibold">Profile Picture</label>
           <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-2">
-            {avatarUrl ? (
+            {avatarFile ? (
+              <img
+                src={URL.createObjectURL(avatarFile)}
+                alt="avatar preview"
+                className="object-cover w-full h-full"
+              />
+            ) : avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt="avatar"
@@ -166,8 +181,8 @@ const UpdateProfile = () => {
             className="w-full border p-2 rounded"
           >
             <option value="">Select</option>
-            <option value="one on one">one on one</option>
-            <option value="Group">group</option>
+            <option value="one on one">One on one</option>
+            <option value="group">Group</option>
           </select>
         </div>
 

@@ -11,30 +11,40 @@ const ChatList = () => {
     const user = auth.currentUser;
     if (!user) return setLoading(false);
 
-    //listen to users connections and fetch chat data
     const unsub = onSnapshot(doc(db, "users", user.uid), async (userDoc) => {
       if (!userDoc.exists()) return setLoading(false);
 
-      const connections = userDoc.data().connections || [];
+      const userData = userDoc.data();
+      const connections = userData.connections || [];
+      const lastSeenChats = userData.lastSeenChats || {}; 
+
       const chatPromises = connections.map(async (buddyUid) => {
-        //get partner profile
         const buddyDoc = await getDoc(doc(db, "users", buddyUid));
         if (!buddyDoc.exists()) return null;
 
         const buddyData = buddyDoc.data();
-
-        // get or create chat document
         const chatId = [user.uid, buddyUid].sort().join("_");
         const chatDoc = await getDoc(doc(db, "chats", chatId));
 
         let lastMessage = "";
         let lastMessageTime = null;
+        let lastMessageSenderId = null;
 
         if (chatDoc.exists()) {
           const chatData = chatDoc.data();
           lastMessage = chatData.lastMessage || "";
           lastMessageTime = chatData.lastMessageTime;
+          lastMessageSenderId = chatData.lastMessageSenderId || null;
         }
+
+        // unread logic
+        const lastSeenTime = lastSeenChats[chatId] || null;
+        const isUnread =
+          lastMessage &&
+          lastMessageSenderId &&
+          lastMessageSenderId !== user.uid && // message sent by friend
+          lastMessageTime &&
+          (!lastSeenTime || lastMessageTime.toMillis() > lastSeenTime.toMillis()); // received after last seen
 
         return {
           chatId,
@@ -46,6 +56,8 @@ const ChatList = () => {
           },
           lastMessage,
           lastMessageTime,
+          lastMessageSenderId,
+          isUnread,
         };
       });
 
@@ -77,7 +89,7 @@ const ChatList = () => {
               to={`/chat/${chat.chatId}`}
               className="block no-underline text-inherit"
             >
-              <div className="flex items-center gap-4 p-4 border rounded shadow bg-white hover:bg-blue-50 cursor-pointer">
+              <div className="flex items-center gap-4 p-4 border rounded shadow bg-white hover:bg-blue-50 cursor-pointer relative">
                 <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-xl font-bold overflow-hidden">
                   {chat.buddy.avatarUrl ? (
                     <img
@@ -100,10 +112,26 @@ const ChatList = () => {
                   </div>
                   {chat.lastMessageTime && (
                     <div className="text-xs text-gray-400">
-                      {new Date(chat.lastMessageTime.toDate()).toLocaleString()}
+                      {(() => {
+                        const date = chat.lastMessageTime.toDate();
+                        const day = String(date.getDate()).padStart(2, "0");
+                        const month = String(date.getMonth() + 1).padStart(
+                          2,
+                          "0"
+                        );
+                        const year = date.getFullYear();
+                        return `last message: ${day}/${month}/${year}`;
+                      })()}
                     </div>
                   )}
                 </div>
+
+                {/* notification Badge */}
+                {chat.isUnread && (
+                  <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                    New
+                  </span>
+                )}
               </div>
             </Link>
           ))}

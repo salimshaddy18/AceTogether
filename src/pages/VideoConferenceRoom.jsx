@@ -1,93 +1,99 @@
-// import React from "react";
-// import { useParams } from "react-router-dom";
-// import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
-
-// const VideoConferenceRooms = () => {
-//   const { roomId } = useParams();
-
-//   const myMeetings = async (element) => {
-//     const appID = 1598297779;
-//     const serverSecret = "2cc45b0576eda7af5a88faf80935c968";
-//     const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-//       appID,
-//       serverSecret,
-//       roomId,
-//       randomID(5),
-//       "tusharbaskheti"
-//     );
-//     const zc = ZegoUIKitPrebuilt.create(kitToken);
-//     zc.joinRoom({
-//         container:element,
-//         scenario: {
-//             mode: 
-//         }
-//     })
-//   };
-
-//   return <h1>this is call room</h1>;
-// };
-
-// export default VideoConferenceRooms;
-
-
-import * as React from 'react';
-import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
+import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth, db } from "../firebase/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
 
 function randomID(len) {
-  let result = '';
-  if (result) return result;
-  var chars = '12345qwertyuiopasdfgh67890jklmnbvcxzMNBVCZXASDQWERTYHGFUIOLKJP',
-    maxPos = chars.length,
-    i;
-  len = len || 5;
-  for (i = 0; i < len; i++) {
-    result += chars.charAt(Math.floor(Math.random() * maxPos));
+  let result = "";
+  const chars =
+    "1234567890qwertyuiopasdfghjklmnbvcxzQWERTYUIOPASDFGHJKLZXCVBNM";
+  for (let i = 0; i < len; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
 }
 
-export function getUrlParams(
-  url = window.location.href
-) {
-  let urlStr = url.split('?')[1];
+function getUrlParams(url = window.location.href) {
+  let urlStr = url.split("?")[1];
   return new URLSearchParams(urlStr);
 }
 
-export default function App() {
-  const roomID = getUrlParams().get('roomID') || randomID(5);
-  let myMeeting = async (element) => {
+export default function VideoConference() {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const containerRef = useRef(null);
+  const zpRef = useRef(null); // to keep reference of Zego instance
 
- // generate Kit Token
- const appID = 1598297779;
- const serverSecret = "2cc45b0576eda7af5a88faf80935c968";
- const kitToken =  ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID,  randomID(5),  randomID(5));
+  // fetching user
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (userAuth) => {
+      if (!userAuth) {
+        navigate("/login");
+      } else {
+        const docRef = doc(db, "users", userAuth.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setUser({ uid: userAuth.uid, ...docSnap.data() });
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
 
- // Create instance object from Kit Token.
- const zp = ZegoUIKitPrebuilt.create(kitToken);
- // start the call
- zp.joinRoom({
-        container: element,
-        sharedLinks: [
-          {
-            name: 'Personal link',
-            url:
-             window.location.protocol + '//' + 
-             window.location.host + window.location.pathname +
-              '?roomID=' +
-              roomID,
-          },
-        ],
-        scenario: {
-         mode: ZegoUIKitPrebuilt.VideoConference,
+  useEffect(() => {
+    if (!user || !containerRef.current) return;
+
+    const roomID = getUrlParams().get("roomID") || randomID(5);
+
+    const appID = Number(import.meta.env.VITE_ZEGOCLOUD_APPID);
+    const serverSecret = import.meta.env.VITE_ZEGOCLOUD_SERVERSECRET;
+
+    const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+      appID,
+      serverSecret,
+      roomID,
+      user.uid,
+      user.fullName || "Guest"
+    );
+
+    const zp = ZegoUIKitPrebuilt.create(kitToken);
+    zpRef.current = zp;
+
+    zp.joinRoom({
+      container: containerRef.current,
+      sharedLinks: [
+        {
+          name: "Personal link",
+          url:
+            window.location.protocol +
+            "//" +
+            window.location.host +
+            window.location.pathname +
+            "?roomID=" +
+            roomID,
         },
-   });
-  };
+      ],
+      scenario: {
+        mode: ZegoUIKitPrebuilt.VideoConference,
+      },
+    });
+
+    // cleanup on unmount
+    return () => {
+      if (zpRef.current) {
+        zpRef.current.destroy();
+        zpRef.current = null;
+      }
+    };
+  }, [user]);
 
   return (
     <div
+      ref={containerRef}
       className="myCallContainer"
-      ref={myMeeting}
-      style={{ width: '100vw', height: '100vh' }}
-    ></div>
+      style={{ width: "100vw", height: "100vh" }}
+    />
   );
 }
