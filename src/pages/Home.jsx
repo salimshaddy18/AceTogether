@@ -3,6 +3,7 @@ import { auth, db } from "../firebase/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
+import AIDoubtChat from "../components/AIDoubtChat";
 
 const Home = () => {
   const [user, setUser] = useState(null);
@@ -164,6 +165,7 @@ const Home = () => {
           </div>
         </div>
       </div>
+      <AIDoubtChat />
     </div>
   );
 };
