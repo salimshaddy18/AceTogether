@@ -38,7 +38,6 @@ const MyStudyBuddies = () => {
     const usersArr = [currentUser.uid, buddyUid].sort();
     const chatId = `${usersArr[0]}_${usersArr[1]}`;
 
-    // ensure chat exists
     const chatRef = doc(db, "chats", chatId);
     const chatSnap = await getDoc(chatRef);
 
@@ -51,30 +50,29 @@ const MyStudyBuddies = () => {
       });
     }
 
-    // navigate to chat
     navigate(`/chat/${chatId}`);
   };
 
-  if (loading) return <div className="p-4">Loading...</div>;
+  if (loading) return <div className="p-4 text-gray-300">Loading...</div>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">My Study Buddies</h2>
+    <div className="max-w-2xl mx-auto p-6 bg-gray-900 min-h-screen text-gray-100">
+      <h2 className="text-2xl font-bold mb-4">🤝 My Study Buddies</h2>
       {buddies.length === 0 ? (
-        <p>You have no study buddies yet.</p>
+        <p className="text-gray-400">You have no study buddies yet.</p>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {buddies.map((buddy) => (
             <div
               key={buddy.uid}
-              className="flex items-center justify-between gap-4 p-4 border rounded shadow bg-white"
+              className="flex items-center justify-between gap-4 p-4 rounded-lg shadow bg-gray-800 hover:bg-gray-700 transition"
             >
               {/* Buddy info (clickable to profile) */}
               <Link
                 to={`/profile/${buddy.uid}`}
                 className="flex items-center gap-4 no-underline text-inherit flex-1"
               >
-                <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-xl font-bold overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-xl font-bold overflow-hidden">
                   {buddy.avatarUrl ? (
                     <img
                       src={buddy.avatarUrl}
@@ -88,15 +86,17 @@ const MyStudyBuddies = () => {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-lg">{buddy.fullName}</div>
-                  <div className="text-gray-500 text-sm">{buddy.email}</div>
+                  <div className="font-semibold text-lg text-gray-100">
+                    {buddy.fullName}
+                  </div>
+                  <div className="text-gray-400 text-sm">{buddy.email}</div>
                 </div>
               </Link>
 
               {/* Chat button */}
               <button
                 onClick={() => handleChat(buddy.uid)}
-                className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700"
+                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-500 transition"
               >
                 💬 Chat
               </button>

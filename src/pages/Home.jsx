@@ -37,7 +37,7 @@ const Home = () => {
     };
   }, [navigate]);
 
-  // 2) check for connection requests
+  // check for connection requests
   useEffect(() => {
     if (!user) {
       setPendingRequestsCount(0);
@@ -96,66 +96,70 @@ const Home = () => {
   }, [user]);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">
-        👋 Welcome, {user?.fullName || user?.email || "there"}
-      </h1>
+    <div className="min-h-screen bg-gray-900 text-gray-100 px-6 py-8">
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Welcome */}
+        <h1 className="text-3xl font-bold">
+          👋 Welcome, {user?.fullName || user?.email || "there"}
+        </h1>
 
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate("/userprofile")}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          User Profile
-        </button>
+        {/* Top actions */}
+        <div className="flex flex-wrap gap-4">
+          <button
+            onClick={() => navigate("/userprofile")}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
+          >
+            User Profile
+          </button>
 
-        <div className="relative inline-block">
-          <Link to="/requests" className="inline-flex items-center">
+          <Link
+            to="/requests"
+            className="relative bg-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-700 transition"
+          >
             Connection Requests
             {pendingRequestsCount > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {pendingRequestsCount}
               </span>
             )}
           </Link>
         </div>
-      </div>
 
+        {/* Quick Actions + AI Doubt Chat side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Quick Actions */}
+          <div className="bg-gray-800 p-6 rounded-2xl shadow-lg space-y-4">
+            <h2 className="text-xl font-semibold">💡 Quick Actions</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-4 rounded shadow space-y-4">
-          <h2 className="text-xl font-semibold">💡 Quick Actions</h2>
+            <Link
+              to="/find-study-partner"
+              className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition"
+            >
+              🤝 <span>Find Partner</span>
+            </Link>
 
-          <Link
-            to="/find-study-partner"
-            className="block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            🤝 Find Partner
-          </Link>
+            <Link
+              to="/buddies"
+              className="flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition"
+            >
+              🧑‍🤝‍🧑 <span>My Study Buddies</span>
+            </Link>
 
-          <Link
-            to="/buddies"
-            className="block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            🧑‍🤝‍🧑 My Study Buddies
-          </Link>
+            <button
+              onClick={() => {
+                const newRoomUrl = "/room";
+                window.open(newRoomUrl, "_blank");
+              }}
+              className="flex items-center justify-center gap-2 w-full bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition"
+            >
+              🎥 <span>Join Meeting</span>
+            </button>
 
-          <button
-            onClick={() => {
-              const newRoomUrl = "/room"; 
-              window.open(newRoomUrl, "_blank");
-            }}
-            className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            🎥 Join Meeting
-          </button>
-
-          <div className="relative">
             <Link
               to="/chats"
-              className="block bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+              className="relative flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition"
             >
-              💬 My Chats
+              💬 <span>My Chats</span>
               {unreadChatsCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {unreadChatsCount}
@@ -163,9 +167,14 @@ const Home = () => {
               )}
             </Link>
           </div>
+
+          {/* AI Doubt Chat */}
+          <div className="bg-gray-800 p-6 rounded-2xl shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">AI Doubt Assistance</h2>
+            <AIDoubtChat />
+          </div>
         </div>
       </div>
-      <AIDoubtChat />
     </div>
   );
 };

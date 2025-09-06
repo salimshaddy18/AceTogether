@@ -26,7 +26,6 @@ const Signup = () => {
         formData.password
       );
 
-      //save user profile to Firestore
       await setDoc(doc(db, "users", userCredentail.user.uid), {
         uid: userCredentail.user.uid,
         fullName: formData.fullName,
@@ -36,9 +35,9 @@ const Signup = () => {
         availability: [],
         goals: "",
         prefers: "",
-        connections: [], 
-        connectionRequestsSent: [], 
-        connectionRequestsReceived: [], 
+        connections: [],
+        connectionRequestsSent: [],
+        connectionRequestsReceived: [],
         createdAt: new Date(),
       });
 
@@ -49,50 +48,54 @@ const Signup = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 border rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Create Your Account</h2>
-      <form onSubmit={handleSignup} className="space-y-4">
-        <input
-          type="text"
-          name="fullName"
-          placeholder="Full Name"
-          value={formData.fullName}
-          onChange={handleChange}
-          required
-          className="w-full border p-2 rounded"
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          className="w-full border p-2 rounded"
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          className="w-full border p-2 rounded"
-        />
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded"
-        >
-          Sign Up
-        </button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-100 px-4">
+      <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-xl p-8">
+        <h2 className="text-2xl font-bold text-center mb-6">Create Your Account</h2>
+        
+        <form onSubmit={handleSignup} className="space-y-4">
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+            className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            className="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        <p className="text-sm mt-4">
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+          >
+            Sign Up
+          </button>
+        </form>
+
+        <p className="text-sm text-center mt-6 text-gray-400">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-blue-500 hover:underline">
             Login
           </Link>
         </p>
-      </form>
+      </div>
     </div>
   );
 };
